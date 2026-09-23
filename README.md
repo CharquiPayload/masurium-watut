@@ -23,10 +23,14 @@ that changed does not stop the game; the log says once when each part takes
 (`[masurium-watut] thinking: ...`).
 
 ```bash
-(cd ../../mod && ./gradlew build)   # the core first: the add-on compiles against it
-./gradlew build                     # build/libs/masurium-watut-<version>.jar
-../../launcher/masurium.py deploy-mod build/libs/masurium-watut-*.jar
+./gradlew build                            # build/libs/masurium-watut-<version>.jar
+masurium deploy-mod build/libs/masurium-watut-*.jar
 ```
+
+It compiles against the [Masurium](https://github.com/CharquiPayload/masurium)
+core, the release named in `build.gradle`: the first build downloads its jar and
+checks it against its checksum. `./gradlew build -Pcore=<a masurium jar>` builds
+against another, a core of your own for one.
 
 The jar goes in `shared/mods/`, with the core. It is client side only.
 

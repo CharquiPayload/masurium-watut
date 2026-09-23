@@ -22,6 +22,34 @@ neoForge {
 
 repositories { mavenCentral() }
 
+// The core this add-on compiles against: the Masurium release named here, as
+// its release page has it, downloaded once and checked against its checksum.
+// -Pcore=<a masurium jar> builds against another (a core of your own, say).
+def core = [version: '1.0.0', sha256: '6f62df98f35f78a6089cf2ad9e45f0607922621af96734fcc0622d804e966064']
+def coreJar = file(findProperty('core') ?: ".gradle/core/masurium-${core.version}.jar")
+
+tasks.register('fetchCore') {
+    description = 'Downloads the Masurium core this add-on compiles against, and checks it.'
+    def dest = coreJar
+    def url = "https://github.com/CharquiPayload/masurium/releases/download/v${core.version}/masurium-${core.version}.jar"
+    def sha = core.sha256
+    onlyIf { !project.hasProperty('core') }
+    outputs.file(dest)
+    doLast {
+        def sum = { f -> java.security.MessageDigest.getInstance('SHA-256').digest(f.bytes).encodeHex().toString() }
+        if (dest.isFile() && sum(dest) == sha) return
+        dest.parentFile.mkdirs()
+        def part = new File(dest.path + '.part')
+        URI.create(url).toURL().withInputStream { input -> part.withOutputStream { it << input } }
+        def got = sum(part)
+        if (got != sha) {
+            part.delete()
+            throw new GradleException("${url} did not arrive as released: its checksum is ${got}, not ${sha}")
+        }
+        part.renameTo(dest)
+    }
+}
+
 // WATUT's names the mixins use, to compile against without a copy of WATUT
 // (src/stubs). Never packaged: in the game WATUT's own classes answer.
 sourceSets {
@@ -29,9 +57,9 @@ sourceSets {
 }
 
 dependencies {
-    // The core, for Bot.isBot(): only a bot is nudged. Build the core first.
+    // The core, for Bot.isBot(): only a bot is nudged.
     // WATUT itself is reached by reflection, so building needs no copy of it.
-    compileOnly fileTree(dir: '../../mod/build/libs', include: 'masurium-*.jar', exclude: '*-sources*')
+    compileOnly files(coreJar).builtBy('fetchCore')
     compileOnly sourceSets.stubs.output
     testImplementation platform('org.junit:junit-bom:5.11.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'

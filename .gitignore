@@ -1,0 +1,6 @@
+# Build output, and the core jar the build downloads (.gradle/core).
+build/
+.gradle/
+run/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
